@@ -30,18 +30,6 @@ def startup():
     init_db()
 
 
-@app.post("/admin/seed", dependencies=[Depends(require_api_key)])
-def admin_seed(db: Session = Depends(get_db)):
-    from seed import LOADS
-    existing = db.query(Load).count()
-    if existing > 0:
-        return {"message": f"Database already has {existing} loads. Skipping seed."}
-    for data in LOADS:
-        db.add(Load(**data))
-    db.commit()
-    return {"message": f"Seeded {len(LOADS)} loads successfully."}
-
-
 def require_api_key(key: str = Security(api_key_header)):
     if not API_KEY:
         raise HTTPException(status_code=500, detail="API_KEY not configured on server")
@@ -74,6 +62,18 @@ def load_to_dict(load: Load) -> dict:
         "dimensions": load.dimensions,
         "status": load.status,
     }
+
+
+@app.post("/admin/seed", dependencies=[Depends(require_api_key)])
+def admin_seed(db: Session = Depends(get_db)):
+    from seed import LOADS
+    existing = db.query(Load).count()
+    if existing > 0:
+        return {"message": f"Database already has {existing} loads. Skipping seed."}
+    for data in LOADS:
+        db.add(Load(**data))
+    db.commit()
+    return {"message": f"Seeded {len(LOADS)} loads successfully."}
 
 
 @app.get("/health")
